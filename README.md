@@ -81,6 +81,9 @@ pkcs11-register
 ```
 
 ### Chrome/ Chromium
+
+**I highly recommend using ```ungoogled-chromium``` from the AUR.**
+
 Add the CAC module to NSS DB.
 This process may take a minute to figure its shit out.
 ```
