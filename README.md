@@ -21,6 +21,7 @@ sudo systemctl enable pcscd
 
 ### Verify your CAC reader is working correctly and can detect your CAC.
 Insert your CAC, remove it, and insert it again after running 'pcsc_scan'. You should see the pcsc daemon reading your CAC when it's inserted and removed in real-time. It will also display information about your CAC.
+
 ```pcsc_scan```
 
 **If there are errors**
@@ -80,8 +81,8 @@ pkcs11-register
 ```
 
 ### Chrome/ Chromium
-Add the CAC module to NSS DB
-This may take a minute to figure shit out.
+Add the CAC module to NSS DB.
+This process may take a minute to figure its shit out.
 ```
 modutil -dbdir sql:$HOME/.pki/nssdb/ -list
 ```
