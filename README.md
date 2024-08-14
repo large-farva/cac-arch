@@ -1,6 +1,14 @@
+# CAC Manager
+
+### DoD CAC Support for Arch Linux.
+
+This script walks you through all the steps needed to get your CAC to work with Chrome and Firefox, on Arch Linux. There may be problems, so please submit an issue report explaining what problems you are experiencing. Screenshots and/or logs will be helpful.
+
+**Manual instructions are still available below.**
+
 # How to use DoD CAC on Arch Linux
 
-Automation script is in the works.
+~~Automation script is in the works.~~ I made that shit.
 
 ### Update and install required packages.
 ```
