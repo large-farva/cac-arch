@@ -19,7 +19,7 @@ sudo bash cac-manager.sh
 ```
 **The rest is pretty self explanitory.**
 
-###Manual instructions are still available below.**
+### Manual instructions are still available below.
 
 # How to use DoD CAC on Arch Linux
 
