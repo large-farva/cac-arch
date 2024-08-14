@@ -4,6 +4,9 @@
 
 This script walks you through all the steps needed to get your CAC to work with Chrome and Firefox, on Arch Linux. There may be problems, so please submit an issue report explaining what problems you are experiencing. Screenshots and/or logs will be helpful.
 
+- Clone this repo.
+  ```git clone 
+
 **Manual instructions are still available below.**
 
 # How to use DoD CAC on Arch Linux
