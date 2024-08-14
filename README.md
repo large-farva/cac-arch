@@ -4,10 +4,24 @@
 
 This script walks you through all the steps needed to get your CAC to work with Chrome and Firefox, on Arch Linux. There may be problems, so please submit an issue report explaining what problems you are experiencing. Screenshots and/or logs will be helpful.
 
-- Clone this repo.
-  ```git clone 
+- Clone this repo and make cac-manager.sh executable.
+```
+cd ~/Downloads
+git clone https://github.com/large-farva/cac-arch.git
+cd cac-arch
+chmod +x cac-manager
+```
+- Launch cac-manager
+```
+./cac-manager.sh
+or
+sudo bash cac-manager.sh
+```
+- The rest is pretty self explanitory.
+
 
 **Manual instructions are still available below.**
+
 
 # How to use DoD CAC on Arch Linux
 
