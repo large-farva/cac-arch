@@ -14,7 +14,9 @@ chmod +x cac-manager
 **Launch cac-manager**
 ```
 ./cac-manager.sh
+```
 or
+```
 sudo bash cac-manager.sh
 ```
 **The rest is pretty self explanitory.**
