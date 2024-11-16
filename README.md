@@ -1,4 +1,4 @@
-# CAC Manager
+# CAC Arch
 
 ### DoD CAC Support for Arch Linux.
 
