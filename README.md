@@ -19,9 +19,9 @@ or
 ```
 sudo bash cac-manager.sh
 ```
-**The rest is pretty self explanitory.**
+The rest is pretty self explanitory.
 
-### Manual instructions are still available below.
+**Manual instructions are still available below.**
 
 ---
 
