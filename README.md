@@ -38,46 +38,45 @@ Make sure cackey and coolkey are uninstalled.
 yay -R cackey coolkey
 sudo pacman -Rns
 ```
-\
+<br />
 ### Start and enable the PCSC daemon
 ```
 sudo systemctl start pcscd
 sudo systemctl enable pcscd
 ```
-\
+<br />
 ### Verify your CAC reader is working correctly and can detect your CAC.
 Insert your CAC, remove it, and insert it again after running 'pcsc_scan'. You should see the pcsc daemon reading your CAC when it's inserted and removed in real-time. It will also display information about your CAC.
-\
 ```pcsc_scan```
-\
+<br />
 **If there are errors**
 ```
 sudo systemctl restart pcscd.socket && sudo systemctl restart pcscd.service
 ```
-\
+<br />
 If you see "scanning present readers waiting for the first reader..." running the following will unload the kernel modules and allow whatever is plugged into the USB slot.
 ```
 modprobe -r pn533 nfc
 ```
-\
+<br />
 ### Verify drivers
 ```
 opensc-tools -l
 ```
-\
+<br />
 You should see this if you are using our government Dell computers with the integrated smartcard readers.
 ```
 # Detected readers (pcsc)
 Nr.  Card  Features  Name
 0    Yes             Broadcom Corp 58200 [Contacted SmartCard] (0123456789ABCD) 00 00
 ```
-\
+<br />
 If not, add the following lines to /etc/opensc/opensc.conf
 ```
 card_drivers = cac
 force_card_driver = cac
 ```
-\
+<br />
 Your opensc.conf should look like this.
 ```
     cat opensc.conf
@@ -91,9 +90,9 @@ Your opensc.conf should look like this.
         }
     }
 ```
-\
+<br />
 Run opensc-tools -l again and your smartcard reader should be listed.
-\
+<br />
 ### Download DoD Certificates
 This will put all of the certificates in ~/Documents/dod-certs/
 ```
@@ -101,26 +100,26 @@ cd Documents
 wget https://militarycac.com/maccerts/AllCerts.zip
 unzip AllCerts.zip -d dod-certs
 ```
-\
+<br />
 ### Firefox
 Load security device (automatic)
 ```
 pkcs11-register
 ```
-\
+<br />
 ### Chrome/ Chromium
-\
 **I highly recommend using ```ungoogled-chromium``` from the AUR and using that as your dedicated 'DoD' browser.\
-\
+<br />
 Save bookmarks for Army Virtual Desktop, DoD Safe, etc...\
-\
+<br />
 Regular Chrome/ Chromium has security shit that gets in the way. Additional configuration is required for those.**\
-\
+<br />
 Add the CAC module to NSS DB.
 This process may take a minute to figure its shit out.
 ```
 modutil -dbdir sql:$HOME/.pki/nssdb/ -list
 ```
+<br />
 You should see something similar.
 ```
     Listing of PKCS #11 Modules
@@ -135,17 +134,18 @@ You should see something similar.
 	library name: /usr/lib/onepin-opensc-pkcs11.so
 	   uri: pkcs11:library-manufacturer=OpenSC%20Project;library-description=OpenSC%20smartcard%20framework;library-version=0.22
 ```
-
+<br />
 ### Import DoD Certificates
 ```
 cd ~/Documents/dod-certs
 for n in *.p7b; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
 for n in *.pem; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
 ```
+<br />
 Verify the authority is in Chrome/ Chromium under Settings> Show Advanced> Manage Certificates> Authorities then expand "org-U.S. Government"
-\
+<br />
 You should see a lot of "DoD" certificates listed.
-\
+<br />
 ### Setup Complete
-\
+<br />
 Fuck you, Jeremy.
