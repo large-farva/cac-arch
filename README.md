@@ -9,7 +9,7 @@ git clone https://github.com/large-farva/cac-arch.git
 cd cac-arch
 chmod +x cac-manager
 ```
-\
+<br />
 **Launch cac-manager**
 ```
 ./cac-manager.sh
@@ -22,7 +22,6 @@ sudo bash cac-manager.sh
 The rest is pretty self explanitory.
 <br />
 **Manual instructions are still available below.**
-<br />
 <br />
 # How to use DoD CAC on Arch Linux
 ~~Automation script is in the works.~~ I made that shit.
