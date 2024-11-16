@@ -1,8 +1,7 @@
 # CAC Arch
 
 ### DoD CAC Support for Arch Linux.
-This script walks you through all the steps needed to get your CAC to work with Chrome and Firefox, on Arch Linux. There may be problems, so please submit an issue report explaining what problems you are experiencing. Screenshots and/or logs will be helpful.
-\
+This script walks you through all the steps needed to get your CAC to work with Chrome and Firefox, on Arch Linux. There may be problems, so please submit an issue report explaining what problems you are experiencing. Screenshots and/or logs will be helpful.\
 **Clone this repo and make cac-manager.sh executable.**
 ```
 cd ~/Downloads
@@ -23,16 +22,17 @@ sudo bash cac-manager.sh
 The rest is pretty self explanitory.
 \
 **Manual instructions are still available below.**
-\
+<br />
+<br />
 # How to use DoD CAC on Arch Linux
 ~~Automation script is in the works.~~ I made that shit.
-\
+<br />
 ### Update and install required packages.
 ```
 yay -Syu
 yay -S nss pcsclite libpcsc-perl pcsc-tools ccid libccid opensc opensc-pkcs11
 ```
-\
+<br />
 Make sure cackey and coolkey are uninstalled.
 ```
 yay -R cackey coolkey
