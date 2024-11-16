@@ -23,8 +23,6 @@ The rest is pretty self explanitory.
 
 **Manual instructions are still available below.**
 
----
-
 # How to use DoD CAC on Arch Linux
 
 ~~Automation script is in the works.~~ I made that shit.
