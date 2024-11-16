@@ -107,7 +107,9 @@ pkcs11-register
 
 ### Chrome/ Chromium
 
-**I highly recommend using ```ungoogled-chromium``` from the AUR and using that as your dedicated 'DoD' browser. Save bookmarks for Virtual Desktop, DoD Safe, etc... Regular Chrome/ Chromium has security shit that gets in the way and it's not worth the hassle.**
+**I highly recommend using ```ungoogled-chromium``` from the AUR and using that as your dedicated 'DoD' browser.\
+Save bookmarks for Virtual Desktop, DoD Safe, etc...\
+Regular Chrome/ Chromium has security shit that gets in the way and it's not worth the hassle.**\
 
 Add the CAC module to NSS DB.
 This process may take a minute to figure its shit out.
