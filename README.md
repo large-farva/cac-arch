@@ -23,20 +23,20 @@ This script automates the setup of a CAC/PIV (Common Access Card / Personal Iden
 1. **Clone the Repository**
   
   ```bash
-  git clone <repository_url>
-  cd <repository_directory>
+  git clone https://github.com/large-farva/cac-arch.git
+  cd cac-arch
   ```
   
 2. **Make the Script Executable**
   
   ```bash
-  chmod +x cac_arch_setup.sh
+  chmod +x cac-arch.sh
   ```
   
 3. **Run the Script**
   
   ```bash
-  sudo ./cac_arch_setup.sh
+  sudo ./cac-arch.sh
   ```
   
 
@@ -87,7 +87,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contributions
 
-Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement.
+Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement. Any and all feedback is welcomed!
 
 ## Author
 
