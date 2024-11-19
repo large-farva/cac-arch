@@ -146,7 +146,7 @@ for n in *.p7b; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
 for n in *.pem; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
 ```
 
-Verify the authority in Chrome/Chromium under **Settings > Privacy and Security > Manage Certificates > Authorities**. Expand "org-U.S. Government" to see the "DoD" certificates listed.
+Verify the authority in Chrome/Chromium under\ **Settings > Privacy and Security > Manage Certificates > Authorities**.\ Expand "org-U.S. Government" to see the "DoD" certificates listed.
 
 ### Setup Complete
 
