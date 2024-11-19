@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# CAC/PIV Setup Script for Arch Linux
 # This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux.
 
 # Step 1: Update System
