@@ -1,202 +1,65 @@
 #!/bin/bash
 
-# Nord color scheme
-declare -A nord=(
-    [0]="#2E3440"  # Background
-    [1]="#3B4252"  # Darker Background
-    [2]="#434C5E"  # Selection Background
-    [3]="#4C566A"  # Comments, Invisible Characters
-    [4]="#D8DEE9"  # Light Text
-    [5]="#E5E9F0"  # Lighter Text
-    [6]="#ECEFF4"  # Lighter Text (brightest)
-    [7]="#8FBCBB"  # Aqua/Cyan
-    [8]="#88C0D0"  # Light Cyan
-    [9]="#81A1C1"  # Blue
-    [10]="#5E81AC" # Dark Blue
-    [11]="#BF616A" # Red
-    [12]="#D08770" # Orange
-    [13]="#EBCB8B" # Yellow
-    [14]="#A3BE8C" # Green
-    [15]="#B48EAD" # Purple
-)
+# CAC/PIV Setup Script for Arch Linux
+# This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux.
 
-# Function to display styled messages
-display_message() {
-    local message_type=$1
-    local message=$2
-    local color=${nord[$3]}
-    gum style --foreground "$color" --border normal --margin "1" --padding "1" "$message"
-    [[ "$message_type" == "error" ]] && gum confirm "Press enter to return to the main menu"
-}
+# Step 1: Update System
+echo "Step 1: Updating system..."
+sudo pacman -Syu --noconfirm
 
-# Function to prompt for sudo password at the start
-prompt_sudo() {
-    display_message info "🔒 Please enter your sudo password to proceed:" 9
-    sudo -v || display_message error "❌ Failed to obtain sudo privileges." 11
-}
+# Step 2: Install Dependencies
+echo "Step 2: Installing dependencies..."
+sudo pacman -S pcsc-tools ccid pcsclite opensc nss --noconfirm
 
-# Unified function for package management
-manage_packages() {
-    local action=$1
-    shift
-    local packages=("$@")
-    local total=${#packages[@]}
-    local current=0
+# Step 3: Enable and Start the pcscd Daemon
+echo "Step 3: Enabling and starting the pcscd daemon..."
+sudo systemctl enable pcscd.service
+sudo systemctl start pcscd.service
 
-    for package in "${packages[@]}"; do
-        current=$((current + 1))
-        echo "$current/$total ${action^}ing $package..."
-        if ! yay -S --noconfirm "$package"; then
-            display_message error "❌ Failed to $action $package. Package not found." 11
-            continue
-        fi
-    done
+# Step 4: Check if pcscd is Running Properly
+echo "Step 4: Checking pcscd daemon status..."
+sudo systemctl status pcscd.service
 
-    display_message success "✅ All packages processed successfully." 14
-}
+# Step 5: Configure OpenSC
+echo "Step 5: Configuring OpenSC..."
+if ! grep -q 'force_card_driver' /etc/opensc/opensc.conf; then
+    echo -e '\n# Adding CAC card drivers to OpenSC configuration\ncard_drivers = cac\nforce_card_driver = cac' | sudo tee -a /etc/opensc/opensc.conf
+fi
 
-# Install Packages Function
-install_packages() {
-    manage_packages "install" "nss" "pcsclite" "libpcsc-perl" "pcsc-tools" "ccid" "libccid" "opensc" "opensc-pkcs11"
-}
+# Step 6: Download DoD Certificates
+echo "Step 6: Downloading DoD certificates..."
+wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/certificates_pkcs7_DoD.zip && unzip certificates_pkcs7_DoD.zip
 
-# Remove Conflicting Packages Function
-remove_conflicting_packages() {
-    local packages=("cackey" "coolkey")
-    for package in "${packages[@]}"; do
-        echo "Removing $package..."
-        if yay -Q "$package" &>/dev/null; then
-            if ! yay -Rns --noconfirm "$package"; then
-                display_message error "❌ Failed to remove $package." 11
-                continue
-            fi
-            display_message success "✅ $package removed successfully." 14
-        else
-            display_message info "ℹ️ $package is not installed." 13
-        fi
-    done
-}
+# Step 7: Import DoD Certificates to Firefox
+echo "Step 7: Importing DoD certificates to Firefox..."
+for cert_file in Certificates_PKCS7_v5.7_DoD*.p7b; do
+    echo "Importing $cert_file to Firefox..."
+    certutil -d sql:$HOME/.mozilla/firefox/*.default-release -A -t "C," -n "$cert_file" -i "$cert_file"
+done
 
-# Function to start and enable a service
-start_service() {
-    local service=$1
-    sudo systemctl start "$service" && sudo systemctl enable "$service" || display_message error "❌ Failed to start and enable $service." 11
-    display_message success "✅ $service started and enabled successfully." 14
-}
+# Step 8: Add CAC Module to NSS DB for Chromium-Based Browsers
+echo "Step 8: Adding CAC module to NSS DB for Chromium-based browsers..."
+modutil -dbdir sql:$HOME/.pki/nssdb/ -add "OpenSC smartcard framework" -libfile /usr/lib/opensc-pkcs11.so
 
-# Function to manage pcsc_scan process
-manage_pcsc_scan() {
-    gum style --foreground "${nord[7]}" "🔍 Press Enter to stop pcsc_scan and return to the menu."
-    pcsc_scan &
-    read -r -p ""
-    pkill -f pcsc_scan
-    display_message success "✅ pcsc_scan stopped. Returning to the main menu." 14
-}
+# Step 9: Import DoD Certificates to Chromium-Based Browsers
+echo "Step 9: Importing DoD certificates to NSS DB for Chromium-based browsers..."
+for n in *.p7b; do
+    echo "Importing $n to NSS DB..."
+    certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n
+done
 
-# Function to handle PCSC daemon errors
-handle_pcsc_errors() {
-    start_service "pcscd.socket"
-    start_service "pcscd.service"
-    gum style --foreground "${nord[12]}" "⚠️ If you're seeing 'scanning present readers waiting for the first reader...', we'll unload kernel modules."
-    gum confirm "🔧 Ready to unload kernel modules?" && sudo modprobe -r pn533 nfc || display_message error "❌ Failed to unload kernel modules." 11
-    display_message success "✅ Kernel modules unloaded successfully." 14
-}
+# Step 10: Import DoD Certificates to System Certificate Store
+echo "Step 10: Importing DoD certificates to system certificate store..."
+openssl pkcs7 -print_certs -in Certificates_PKCS7_v5.7_DoD.pem.p7b -out dod_bundle.pem
 
-# Function to verify drivers
-verify_drivers() {
-    gum spin --spinner dot --title "🔄 Verifying drivers with opensc-tools..." --foreground "${nord[13]}" -- opensc-tool -l || display_message error "❌ Failed to verify drivers with opensc-tools." 11
-    gum style --foreground "${nord[10]}" "ℹ️ If your smartcard reader is not listed, update /etc/opensc/opensc.conf."
-}
+awk 'split_after == 1 {n++; split_after=0} /-----END CERTIFICATE-----/ {split_after=1} {print > "cert" n ".crt"}' < dod_bundle.pem
 
-# Function to update /etc/opensc/opensc.conf
-update_opensc_conf() {
-    display_message info "🔧 Adding necessary configurations to /etc/opensc/opensc.conf..." 9
-    sudo tee /etc/opensc/opensc.conf > /dev/null <<EOL
-app default {
-    card_drivers = cac
-    force_card_driver = cac
-    framework pkcs15 {
-    # use_file_caching = true;
-    }
-}
-EOL
-    [[ $? -eq 0 ]] && display_message success "✅ /etc/opensc/opensc.conf updated successfully." 14 || display_message error "❌ Failed to update /etc/opensc/opensc.conf." 11
-}
+echo "Creating directory for DoD certificates and copying CRT files..."
+sudo mkdir -p /etc/ca-certificates/trust-source/dod/
+sudo cp *.crt /etc/ca-certificates/trust-source/dod/
 
-# Function to download DoD Certificates
-download_dod_certs() {
-    gum spin --spinner dot --title "⬇️ Downloading DoD Certificates..." --foreground "${nord[7]}" -- \
-        cd ~/Documents && wget https://militarycac.com/maccerts/AllCerts.zip && unzip AllCerts.zip -d dod-certs || display_message error "❌ Failed to download and unzip DoD certificates." 11
-    display_message success "✅ DoD certificates downloaded successfully." 14
-}
+# Step 11: Update Certificate Store
+echo "Updating certificate store..."
+sudo update-ca-trust
 
-# Unified Function to Configure Browsers
-configure_browser() {
-    local browser=$1
-    local configure_command=$2
-    local cert_import_path=$3
-    local cert_command=$4
-
-    gum spin --spinner dot --title "🔄 Configuring $browser for CAC..." --foreground "${nord[8]}" -- $configure_command || display_message error "❌ Failed to configure $browser." 11
-    display_message success "✅ $browser configured successfully." 14
-
-    if [[ -n $cert_import_path && -n $cert_command ]]; then
-        gum spin --spinner dot --title "🔄 Importing DoD certificates into $browser..." --foreground "${nord[9]}" -- cd "$cert_import_path" || display_message error "❌ Failed to navigate to DoD certificates directory." 11
-        for cert in *.p7b *.pem; do
-            $cert_command "$cert" || display_message error "❌ Failed to import DoD certificate $cert." 11
-        done
-        display_message success "✅ DoD certificates imported into $browser successfully." 14
-    fi
-}
-
-# Specific Browser Configuration Functions
-configure_firefox() {
-    configure_browser "Firefox" "pkcs11-register"
-}
-
-configure_chromium() {
-    configure_browser "Chrome/Chromium" "sudo modutil -dbdir sql:$HOME/.pki/nssdb/ -add 'CAC Module' -libfile /usr/lib/opensc-pkcs11.so" "~/Documents/dod-certs" "sudo certutil -d sql:$HOME/.pki/nssdb -A -t TC -n"
-}
-
-# Interactive menu with descriptions
-interactive_prompt() {
-    while true; do
-        local options=(
-            "📦 Install Packages: Install necessary packages for CAC."
-            "❌ Remove Conflicting Packages: Remove cackey and coolkey to avoid conflicts."
-            "🖥️ Start PCSC Daemon: Start and enable the PCSC daemon."
-            "🔍 Verify CAC Reader: Run pcsc_scan to verify the CAC reader."
-            "🔧 Handle PCSC Errors: Troubleshoot and fix PCSC daemon issues."
-            "🔄 Verify Drivers: Verify drivers using opensc-tools."
-            "🛠️ Update opensc.conf: Update the /etc/opensc/opensc.conf file."
-            "⬇️ Download DoD Certificates: Download and unzip DoD certificates."
-            "🌐 Configure Firefox: Configure Firefox for CAC."
-            "🌐 Configure Chrome/Chromium: Configure Chrome/Chromium for CAC."
-            "🚪 Quit: Exit the script."
-        )
-
-        local choice=$(printf "%s\n" "${options[@]}" | gum choose --height 15 --cursor.foreground "${nord[8]}" --item.foreground "${nord[9]}" --selected.foreground "${nord[7]}")
-
-        case $choice in
-            "📦 Install Packages: Install necessary packages for CAC.") install_packages ;;
-            "❌ Remove Conflicting Packages: Remove cackey and coolkey to avoid conflicts.") remove_conflicting_packages ;;
-            "🖥️ Start PCSC Daemon: Start and enable the PCSC daemon.") start_service "pcscd" ;;
-            "🔍 Verify CAC Reader: Run pcsc_scan to verify the CAC reader.") manage_pcsc_scan ;;
-            "🔧 Handle PCSC Errors: Troubleshoot and fix PCSC daemon issues.") handle_pcsc_errors ;;
-            "🔄 Verify Drivers: Verify drivers using opensc-tools.") verify_drivers ;;
-            "🛠️ Update opensc.conf: Update the /etc/opensc/opensc.conf file.") update_opensc_conf ;;
-            "⬇️ Download DoD Certificates: Download and unzip DoD certificates.") download_dod_certs ;;
-            "🌐 Configure Firefox: Configure Firefox for CAC.") configure_firefox ;;
-            "🌐 Configure Chrome/Chromium: Configure Chrome/Chromium for CAC.") configure_chromium ;;
-            "🚪 Quit: Exit the script.") echo "👋 Exiting..."; exit 0 ;;
-            *) display_message error "❌ Invalid option selected." 11 ;;
-        esac
-
-        gum confirm "🔁 Press enter to return to the main menu"
-    done
-}
-
-# Main script execution with enhanced styling
-gum style --foreground "${nord[9]}" --border normal --margin "1" --padding "2" "✨ CAC Manager ✨"
-prompt_sudo
-interactive_prompt
+echo "Setup Complete! You are now fully CAC enabled on your Arch Linux system."
