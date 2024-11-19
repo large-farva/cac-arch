@@ -151,5 +151,3 @@ Verify the authority in Chrome/Chromium under:<br>
 Expand "org-U.S. Government" to see the "DoD" certificates listed.
 
 ### Setup Complete
-
-Fuck you, Jeremy.
