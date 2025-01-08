@@ -1,64 +1,131 @@
 #!/bin/bash
 
-# This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux.
+# Script to set up DoD CAC on Arch Linux for Firefox and Chromium
 
-# Step 1: Update System
-echo "Step 1: Updating system..."
-sudo pacman -Syu --noconfirm
+set -e
 
-# Step 2: Install Dependencies
-echo "Step 2: Installing dependencies..."
-sudo pacman -S pcsc-tools ccid pcsclite opensc nss --noconfirm
+# Install necessary packages
+echo "Installing required packages..."
+sudo pacman -Syu --noconfirm ccid opensc pcsc-tools
 
-# Step 3: Enable and Start the pcscd Daemon
-echo "Step 3: Enabling and starting the pcscd daemon..."
-sudo systemctl enable pcscd.service
-sudo systemctl start pcscd.service
-
-# Step 4: Check if pcscd is Running Properly
-echo "Step 4: Checking pcscd daemon status..."
-sudo systemctl status pcscd.service
-
-# Step 5: Configure OpenSC
-echo "Step 5: Configuring OpenSC..."
-if ! grep -q 'force_card_driver' /etc/opensc/opensc.conf; then
-    echo -e '\n# Adding CAC card drivers to OpenSC configuration\ncard_drivers = cac\nforce_card_driver = cac' | sudo tee -a /etc/opensc/opensc.conf
+read -p "Do you want to install Chromium? (Recommended) (y/n): " install_chromium
+if [[ "$install_chromium" == "y" ]]; then
+    echo "Installing Chromium..."
+    sudo pacman -S --noconfirm chromium
 fi
 
-# Step 6: Download DoD Certificates
-echo "Step 6: Downloading DoD certificates..."
-wget https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/certificates_pkcs7_DoD.zip && unzip certificates_pkcs7_DoD.zip
+read -p "Do you want to install Firefox? (y/n): " install_firefox
+if [[ "$install_firefox" == "y" ]]; then
+    echo "Installing Firefox..."
+    sudo pacman -S --noconfirm firefox
+fi
+echo "------------------------------"
 
-# Step 7: Import DoD Certificates to Firefox
-echo "Step 7: Importing DoD certificates to Firefox..."
-for cert_file in Certificates_PKCS7_v5.7_DoD*.p7b; do
-    echo "Importing $cert_file to Firefox..."
-    certutil -d sql:$HOME/.mozilla/firefox/*.default-release -A -t "C," -n "$cert_file" -i "$cert_file"
-done
 
-# Step 8: Add CAC Module to NSS DB for Chromium-Based Browsers
-echo "Step 8: Adding CAC module to NSS DB for Chromium-based browsers..."
-modutil -dbdir sql:$HOME/.pki/nssdb/ -add "OpenSC smartcard framework" -libfile /usr/lib/opensc-pkcs11.so
+# Configure OpenSC
+echo "Configuring OpenSC..."
+if grep -q "enable_pinpad=false" /etc/opensc.conf; then
+    echo "OpenSC already configured."
+else
+    echo "enable_pinpad=false" | sudo tee -a /etc/opensc.conf
+fi
+echo "------------------------------"
 
-# Step 9: Import DoD Certificates to Chromium-Based Browsers
-echo "Step 9: Importing DoD certificates to NSS DB for Chromium-based browsers..."
-for n in *.p7b; do
-    echo "Importing $n to NSS DB..."
-    certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n
-done
+# Enable and restart pcscd service
+echo "Enabling and restarting pcscd service..."
+sudo systemctl enable pcscd.service
+sudo systemctl restart pcscd.socket
+echo "------------------------------"
 
-# Step 10: Import DoD Certificates to System Certificate Store
-echo "Step 10: Importing DoD certificates to system certificate store..."
-openssl pkcs7 -print_certs -in Certificates_PKCS7_v5.7_DoD.pem.p7b -out dod_bundle.pem
+# Test the smart card reader
+read -p "Do you want to test your smart card reader now? (y/n): " test_reader
+if [[ "$test_reader" == "y" ]]; then
+    echo "Testing smart card reader for 10 seconds..."
+    timeout 10 pcsc_scan
+else
+    echo "Skipping smart card reader test."
+fi
+echo "------------------------------"
 
-awk 'split_after == 1 {n++; split_after=0} /-----END CERTIFICATE-----/ {split_after=1} {print > "cert" n ".crt"}' < dod_bundle.pem
+# Cleanup function
+cleanup() {
+    echo "Cleaning up old certificate archives..."
+    if [[ -d "$CERTS_DIR" ]]; then
+        rm -rf "$CERTS_DIR/$CERTS_ZIP"
+    fi
+    echo "Cleanup completed."
+}
+echo "------------------------------"
 
-echo "Creating directory for DoD certificates and copying CRT files..."
-sudo mkdir -p /etc/ca-certificates/trust-source/dod/
-sudo cp *.crt /etc/ca-certificates/trust-source/dod/
+# Download DoD CAC certificates with retry logic
+CERTS_URL="https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_v5-6_dod.zip"
+CERTS_ZIP="unclass-certificates_pkcs7_v5-6_dod.zip"
+CERTS_DIR="$HOME/.certs"
 
-# Step 11: Update Certificate Store
-echo "Updating certificate store..."
-sudo update-ca-trust
+mkdir -p "$CERTS_DIR"
 
-echo "Setup Complete! You are now fully CAC enabled on your Arch Linux system."
+download_certificates() {
+    local retries=3
+    local success=0
+    for ((i=1; i<=retries; i++)); do
+        echo "Downloading DoD CAC certificates (attempt $i of $retries)..."
+        wget -O "$CERTS_DIR/$CERTS_ZIP" "$CERTS_URL" && success=1 && break
+        echo "Download failed. Retrying..."
+        sleep 5
+    done
+
+    if [[ $success -eq 0 ]]; then
+        echo "Failed to download certificates after $retries attempts. Exiting."
+        exit 1
+    fi
+}
+
+download_certificates
+
+unzip -o "$CERTS_DIR/$CERTS_ZIP" -d "$CERTS_DIR"
+echo "------------------------------"
+
+# Save Firefox instructions
+FIREFOX_INSTRUCTIONS="$HOME/Downloads/firefox-instructions.txt"
+cat <<EOF > "$FIREFOX_INSTRUCTIONS"
+Firefox Setup Instructions:
+
+1. Open Firefox and go to the 'Privacy & Security' tab in Settings.
+2. Scroll to the Certificates section and click 'View Certificates'.
+3. Under Authorities, click 'Import', navigate to the DoD certificates directory at "$CERTS_DIR".
+4. Select 'Certificates_PKCS7_v5.6_DoD.der.p7b'.
+5. Check all trust boxes and click OK.
+6. In the same Privacy & Security tab, click 'Security Devices'.
+7. Click 'Load', enter 'CAC Module' for Module Name.
+8. Browse to "/usr/lib64/",click on "opensc-pkcs11.so", and click OK.
+9. Close/Reopen Firefox and go to a DoD CAC-enabled website.
+
+Note: You may need to reboot your computer. Also, if Firefox fails to read your certificate run this 
+EOF
+
+echo "Firefox setup instructions saved to $FIREFOX_INSTRUCTIONS."
+
+# Save Chromium instructions
+CHROMIUM_INSTRUCTIONS="$HOME/Downloads/chromium-instructions.txt"
+cat <<EOF > "$CHROMIUM_INSTRUCTIONS"
+Chromium Setup Instructions:
+
+1. Open Chromium and go to the 'Privacy and Security' tab in Settings.
+2. Then click 'Manage certificates'.
+3. Under 'Authorities', click 'Import'.
+4. Navigate to the DoD certificates directory at "$CERTS_DIR".
+5. Select 'Certificates_PKCS7_v5-6_DoD.der.p7b'.
+6. Check all trust boxes and click OK.
+7. Open a terminal and execute this 'modutil -dbdir sql:.pki/nssdb/ -add "CAC Module" -libfile /usr/lib64/opensc-pkcs11.so'. This loads your Security Device Module 
+8. Execute 'modutil -dbdir sql:.pki/nssdb/ -list' and make sure 'CAC Module' is visible.
+9. Close/Reopen Chromium and go to a DoD CAC-enabled website.
+
+b. Note: You may need to reboot your computer.
+EOF
+
+echo "Chromium setup instructions saved to $CHROMIUM_INSTRUCTIONS."
+
+# Call cleanup
+cleanup
+
+echo "DoD CAC setup script completed. Please proceed with the browser setup."
