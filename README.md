@@ -2,93 +2,85 @@
 
 ## Overview
 
-This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. This script is specifically designed for users working with US government CACs, and it provides compatibility with both Firefox and Chromium-based browsers.
+This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
 
 ## Features
 
-- Updates system and installs necessary dependencies for CAC operation.
+- Updates the system and installs required dependencies for CAC operation.
+- Installs required dependencies for CAC operation.
 - Configures the `pcscd` service to interact with the smart card reader.
-- Configures OpenSC to handle CAC cards effectively.
-- Downloads and installs the latest DoD certificates for browser integration.
-- Sets up Firefox and Chromium-based browsers to use CAC certificates for secure access.
+- Configures OpenSC for CAC compatibility.
+- Downloads and installs the latest DoD certificates with retry logic for network stability.
+- Guides you through setting up Firefox and Chromium for CAC functionality.
 
 ## Prerequisites
 
-- An Arch Linux distribution (e.g., Arch Linux, EndeavourOS, Archo Linux).
-- Root or sudo access to install and configure packages.
+- Arch Linux distribution (e.g., Arch Linux, EndeavourOS).
+- Root or sudo access for package installation and system configuration.
 - A USB smart card reader.
+- Stable internet connection.
 
 ## Usage
 
 1. **Clone the Repository**
-  
-  ```bash
-  git clone https://github.com/large-farva/cac-arch.git
-  cd cac-arch
-  ```
-  
-2. **Make the Script Executable**
-  
-  ```bash
-  chmod +x cac-arch.sh
-  ```
-  
-3. **Run the Script**
-  
-  ```bash
-  sudo ./cac-arch.sh
-  ```
-  
+  `git clone https://github.com/large-farva/cac-arch.git
+  cd cac-arch`
+2. Make the Script Executable
+  `chmod +x cac-arch.sh`
+3. Run Script
+  `sudo ./cac-arch.sh`
 
-The script will guide you through each step, displaying messages about what is currently being configured or installed. Please ensure that you have a stable internet connection as the script will download dependencies and certificates.
+The script will guide you through each step, including optional installation of Chromium and Firefox, configuration of services, and downloading and importing DoD certificates.
 
 ## Script Steps
 
-1. **Update System**: Ensures your system is up to date with the latest package versions.
-2. **Install Dependencies**: Installs all necessary dependencies, including `pcsc-tools`, `opensc`, and `ccid`.
-3. **Enable and Start pcscd Daemon**: Enables and starts the smart card service (`pcscd`) to detect the CAC reader.
-4. **Check pcscd Status**: Verifies that the `pcscd` daemon is running properly.
-5. **Configure OpenSC**: Adds required configurations to `/etc/opensc/opensc.conf` to support CAC cards.
-6. **Download DoD Certificates**: Downloads the latest DoD certificates required for authentication.
-7. **Import DoD Certificates to Firefox**: Imports downloaded certificates to Firefox to enable secure access using CAC.
-8. **Add CAC Module to NSS DB for Chromium-Based Browsers**: Configures Chromium-based browsers to use the OpenSC PKCS11 module.
-9. **Import DoD Certificates to Chromium-Based Browsers**: Adds certificates to the NSS database for Chromium-based browsers.
-10. **Import DoD Certificates to System Certificate Store**: Installs DoD certificates into the system-wide certificate store.
-11. **Update Certificate Store**: Updates the certificate store to recognize newly imported certificates.
+1. **Update System**: Ensures your system is updated with the latest package versions.
+2. **Install Dependencies**: Installs `pcsc-tools`, `opensc`, `ccid`, and optionally Chromium and Firefox.
+3. **Enable and Start `pcscd` Service**: Starts the smart card service for CAC detection.
+4. **Configure OpenSC**: Updates `/etc/opensc.conf` with necessary settings for CAC cards.
+5. **Test Smart Card Reader**: Optionally verifies the reader functionality with `pcsc_scan` (10-second timeout).
+6. **Download DoD Certificates**: Downloads the latest certificates, with retry logic for failed downloads.
+7. **Import DoD Certificates into Browsers**: Saves instructions for Firefox and Chromium in `~/Downloads` for manual setup.
+8. **Cleanup**: Removes temporary certificate archives after installation.
 
 ## Troubleshooting
 
-- **PCSC Daemon Issues**: If the script fails to detect the card, ensure the `pcscd` service is running:
+- **`pcscd` Daemon Issues**: If the script fails to detect the smart card reader, ensure the `pcscd`service is running:
+  `sudo systemctl status pcscd.socket`
+  Restart the service if necessary: (I recommend making an alias!)
+  `sudo systemctl restart pcscd.socket`
   
-  ```bash
-  sudo systemctl status pcscd
-  ```
+- **Browser Setup Issues: **If Firefoc or Chromium doesn't recongnize the CAC:
   
-  Restart the service if necessary:
-  
-  ```bash
-  sudo systemctl restart pcscd
-  ```
-  
-- **Browser Not Recognizing CAC**: Verify that the security module is loaded in Firefox or Chromium, and that the DoD certificates are properly imported.
+  - Ensure the `opensc-pkcs11.so` module is correctly loaded in the browser.
+    
+  - Restart `pcscd` service:
+    `sudo systemctl restart pcscd.socket`
+    
+  - Restart the browser and try again.
+    
 
 ## Notes
 
-- This script is optimized for CAC cards but may work with PIV cards as well.
-- The installation path for `onepin-opensc-pkcs11.so` may vary depending on the OpenSC package version. Adjust the paths in the script if necessary.
+- This script is optimized for CAC, but may work with PIV cards as well.
+  
+- Adjust paths for `onepin-opensc-pkcs11.so` if using dual-use CACs.
+  
+- Follow the browser instructionws saved in ~/Downloads adfter running the script.
+  
 
 ## Disclaimer
 
-This script is provided "as is" without warranty of any kind. Use it at your own risk. Ensure you have backups and understand the changes being made to your system before executing the script.
+This script is provided "as is" without any warranties. Use at your own risk. Always back up your system before making changes.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributions
 
-Feel free to submit pull requests or open issues if you encounter any problems or have suggestions for improvement. Any and all feedback is welcomed!
+Feel free to open issues or submit pull requests for improvements. Feedback is always welcome!
 
-## Author
+##Author
 
-- Sebastian (GitHub: [large-farva](https://github.com/large-farva))
+- Sebastian (Github: large-farva)
