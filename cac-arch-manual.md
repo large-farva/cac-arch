@@ -1,119 +1,151 @@
-## How to Use DoD CAC on Arch Linux
+# Manual Instructions for Setting Up DoD CAC on Arch Linux
 
-### Update and Install Required Packages
+## Overview
+These instructions detail the manual steps to set up a Common Access Card (CAC) on Arch Linux. This includes configuring the system, installing necessary software, and setting up CAC compatibility for Firefox and Chromium browsers.
 
+## Step-by-Step Instructions
+
+### 1. Update the System
+Ensure your system is up-to-date with the latest packages:
 ```bash
-yay -Syu
-yay -S ccid opensc pcsc-tools
+sudo pacman -Syu
 ```
 
-Make sure `cackey` and `coolkey` are uninstalled:
-
+### 2. Install Required Packages
+Install the necessary dependencies for CAC functionality:
 ```bash
-yay -R cackey coolkey
-sudo pacman -Rns
+sudo pacman -Syu --noconfirm ccid opensc pcsc-tools
 ```
 
-### Start and Enable the PCSC Daemon
-
+### 3. Remove Conflicting Packages
+Uninstall packages that may interfere with OpenSC:
 ```bash
-sudo systemctl start pcscd
-sudo systemctl enable pcscd
+sudo pacman -R --noconfirm cackey coolkey
 ```
 
-### Verify Your CAC Reader
+### 4. Install Browsers
+#### Install Chromium (Recommended):
+If you prefer Chromium, install it:
+```bash
+sudo pacman -S --noconfirm chromium
+```
 
-Insert your CAC, remove it, and insert it again after running `pcsc_scan`. You should see the PCSC daemon reading your CAC in real-time.
+#### Install Firefox:
+If you prefer Firefox, install it:
+```bash
+sudo pacman -S --noconfirm firefox
+```
 
+### 5. Configure OpenSC
+Edit the OpenSC configuration file to disable the PIN pad (if your reader does not have one):
+```bash
+echo "enable_pinpad=false" | sudo tee -a /etc/opensc.conf
+```
+
+### 6. Enable and Restart `pcscd` Service
+Start and enable the smart card service:
+```bash
+sudo systemctl enable pcscd.service
+sudo systemctl restart pcscd.socket
+```
+
+### 7. Test the Smart Card Reader
+Test your smart card reader to ensure it is functioning:
 ```bash
 pcsc_scan
 ```
-
-**If There Are Errors:**
-
+To limit the test to 10 seconds, use:
 ```bash
-sudo systemctl restart pcscd.socket
-sudo systemctl restart pcscd.service
+timeout 10 pcsc_scan
 ```
 
-If you see "scanning present readers waiting for the first reader...", unload the kernel modules:
-
+### 8. Download DoD Certificates
+#### Create a Directory for Certificates:
 ```bash
-modprobe -r pn533 nfc
+mkdir -p $HOME/.certs
 ```
 
-### Verify Drivers
-
+#### Download Certificates with Retry Logic:
+Use the following commands to download DoD certificates:
 ```bash
-opensc-tools -l
+CERTS_URL="https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_v5-6_dod.zip"
+CERTS_ZIP="$HOME/.certs/unclass-certificates_pkcs7_v5-6_dod.zip"
+wget -O "$CERTS_ZIP" "$CERTS_URL"
 ```
 
-You should see your smartcard reader listed. For example:
-
-```
-# Detected readers (pcsc)
-Nr.  Card  Features  Name
-0    Yes             Broadcom Corp 58200 [Contacted SmartCard] (0123456789ABCD) 00 00
-```
-
-If not, update `/etc/opensc/opensc.conf`:
-
+#### Extract the Certificates:
 ```bash
-card_drivers = cac
-force_card_driver = cac
+unzip -o "$CERTS_ZIP" -d "$HOME/.certs"
 ```
 
-### Download DoD Certificates
+### 9. Configure Chromium
+#### Import DoD Certificates:
+1. Open Chromium.
+2. Navigate to `Privacy and Security` in Settings.
+3. Click `Manage Certificates`.
+4. Under `Authorities`, click `Import` and select:
+   ```
+   $HOME/.certs/Certificates_PKCS7_v5.6_DoD.der.p7b
+   ```
+5. Check all trust boxes and click OK.
 
-This will download and extract DoD certificates:
+#### Add the Security Module:
+1. Open a terminal and execute:
+   ```bash
+   modutil -dbdir sql:.pki/nssdb/ -add "CAC Module" -libfile /usr/lib64/opensc-pkcs11.so
+   ```
+2. Verify the module was added:
+   ```bash
+   modutil -dbdir sql:.pki/nssdb/ -list
+   ```
 
+#### Restart Chromium and Test:
+Restart Chromium and access a CAC-enabled website.
+
+### 10. Configure Firefox
+#### Import DoD Certificates:
+1. Open Firefox.
+2. Navigate to `Privacy & Security` in Settings.
+3. Under `Certificates`, click `View Certificates`.
+4. Under `Authorities`, click `Import` and select:
+   ```
+   $HOME/.certs/Certificates_PKCS7_v5.6_DoD.der.p7b
+   ```
+5. Check all trust boxes and click OK.
+
+#### Add the Security Module:
+1. Under `Security Devices`, click `Load`.
+2. Enter `CAC Module` for the Module Name.
+3. Browse to:
+   ```
+   /usr/lib64/opensc-pkcs11.so
+   ```
+4. Click OK.
+
+#### Restart Firefox and Test:
+Restart Firefox and access a CAC-enabled website.
+
+### 11. Cleanup
+Remove any temporary certificate archives:
 ```bash
-cd ~/Documents
-wget https://militarycac.com/maccerts/AllCerts.zip
-unzip AllCerts.zip -d dod-certs
+rm -rf $HOME/.certs/unclass-certificates_pkcs7_v5-6_dod.zip
 ```
 
-### Firefox: Load Security Device (Automatic)
+### Troubleshooting
+- **`pcscd` Daemon Issues**:
+  Ensure the `pcscd` service is running:
+  ```bash
+  sudo systemctl status pcscd.socket
+  ```
+  Restart the service if necessary:
+  ```bash
+  sudo systemctl restart pcscd.socket
+  ```
 
-```bash
-pkcs11-register
-```
+- **Browser Not Recognizing CAC**:
+  - Verify the security module is correctly loaded.
+  - Restart the `pcscd` service and the browser:
+    ```bash
+    sudo systemctl restart pcscd.socket
+    ```
 
-### Chrome/Chromium
-
-**I recommend using `ungoogled-chromium` from the AUR.** Regular Chrome/Chromium has additional security features that may interfere.
-
-Add the CAC module to NSS DB:
-
-```bash
-modutil -dbdir sql:$HOME/.pki/nssdb/ -list
-```
-
-You should see something similar:
-
-```
-Listing of PKCS #11 Modules
------------------------------------------------------------
-1. NSS Internal PKCS #11 Module
-   uri: pkcs11:library-manufacturer=Mozilla%20Foundation;library-description=NSS%20Internal%20Crypto%20Services;library-version=3.61
-   slots: 2 slots attached
-   status: loaded
-
-2. OpenSC smartcard framework (0.22)
-   library name: /usr/lib/onepin-opensc-pkcs11.so
-   uri: pkcs11:library-manufacturer=OpenSC%20Project;library-description=OpenSC%20smartcard%20framework;library-version=0.22
-```
-
-### Import DoD Certificates
-
-```bash
-cd ~/Documents/dod-certs
-for n in *.p7b; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
-for n in *.pem; do certutil -d sql:$HOME/.pki/nssdb -A -t TC -n $n -i $n; done
-```
-
-Verify the authority in Chrome/Chromium under:<br>
-**Settings > Privacy and Security > Manage Certificates > Authorities**<br>
-Expand "org-U.S. Government" to see the "DoD" certificates listed.
-
-### Setup Complete
