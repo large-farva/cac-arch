@@ -65,17 +65,14 @@ timeout 10 pcsc_scan
 mkdir -p $HOME/.certs
 ```
 
-#### Download Certificates with Retry Logic:
-Use the following commands to download DoD certificates:
+#### Download Certificates:
 ```bash
-CERTS_URL="https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_v5-6_dod.zip"
-CERTS_ZIP="$HOME/.certs/unclass-certificates_pkcs7_v5-6_dod.zip"
-wget -O "$CERTS_ZIP" "$CERTS_URL"
+wget -O $HOME/.certs/unclass-certificates_pkcs7_v5-6_dod.zip https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_v5-6_dod.zip
 ```
 
 #### Extract the Certificates:
 ```bash
-unzip -o "$CERTS_ZIP" -d "$HOME/.certs"
+unzip -o $HOME/.certs/unclass-certificates_pkcs7_v5-6_dod.zip -d $HOME/.certs
 ```
 
 ### 9. Configure Chromium
