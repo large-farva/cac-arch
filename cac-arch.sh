@@ -3,16 +3,32 @@
 # Script to set up DoD CAC on Arch Linux for Firefox and Chromium
 
 set -e
+LOGFILE="cac_setup.log"
+exec > >(tee -a "$LOGFILE") 2>&1
+
+# Update the system
+echo "Updating the system..."
+sudo pacman -Syu --noconfirm
+echo "System update completed."
+echo "------------------------------"
 
 # Install necessary packages
 echo "Installing required packages..."
 sudo pacman -Syu --noconfirm ccid opensc pcsc-tools
+echo "------------------------------"
 
+# Remove confilcting packages
+echo "Uninstalling conflicting packages..."
+sudo pacman -R --noconfirm cackey coolkey
+echo "------------------------------"
+
+# Install browser(s)?
 read -p "Do you want to install Chromium? (Recommended) (y/n): " install_chromium
 if [[ "$install_chromium" == "y" ]]; then
     echo "Installing Chromium..."
     sudo pacman -S --noconfirm chromium
 fi
+echo "------------------------------"
 
 read -p "Do you want to install Firefox? (y/n): " install_firefox
 if [[ "$install_firefox" == "y" ]]; then
@@ -85,26 +101,6 @@ download_certificates
 unzip -o "$CERTS_DIR/$CERTS_ZIP" -d "$CERTS_DIR"
 echo "------------------------------"
 
-# Save Firefox instructions
-FIREFOX_INSTRUCTIONS="$HOME/Downloads/firefox-instructions.txt"
-cat <<EOF > "$FIREFOX_INSTRUCTIONS"
-Firefox Setup Instructions:
-
-1. Open Firefox and go to the 'Privacy & Security' tab in Settings.
-2. Scroll to the Certificates section and click 'View Certificates'.
-3. Under Authorities, click 'Import', navigate to the DoD certificates directory at "$CERTS_DIR".
-4. Select 'Certificates_PKCS7_v5.6_DoD.der.p7b'.
-5. Check all trust boxes and click OK.
-6. In the same Privacy & Security tab, click 'Security Devices'.
-7. Click 'Load', enter 'CAC Module' for Module Name.
-8. Browse to "/usr/lib64/",click on "opensc-pkcs11.so", and click OK.
-9. Close/Reopen Firefox and go to a DoD CAC-enabled website.
-
-Note: You may need to reboot your computer. Also, if Firefox fails to read your certificate run this 
-EOF
-
-echo "Firefox setup instructions saved to $FIREFOX_INSTRUCTIONS."
-
 # Save Chromium instructions
 CHROMIUM_INSTRUCTIONS="$HOME/Downloads/chromium-instructions.txt"
 cat <<EOF > "$CHROMIUM_INSTRUCTIONS"
@@ -120,11 +116,36 @@ Chromium Setup Instructions:
 8. Execute 'modutil -dbdir sql:.pki/nssdb/ -list' and make sure 'CAC Module' is visible.
 9. Close/Reopen Chromium and go to a DoD CAC-enabled website.
 
-b. Note: You may need to reboot your computer.
+Note: 
+You may need to reboot your computer.
+
+If Chromium can't read your certificate, close Chromium, run 'sudo systemctl restart pcscd.socket', and then restart Chromium.
 EOF
 
 echo "Chromium setup instructions saved to $CHROMIUM_INSTRUCTIONS."
 
+# Save Firefox instructions
+FIREFOX_INSTRUCTIONS="$HOME/Downloads/firefox-instructions.txt"
+cat <<EOF > "$FIREFOX_INSTRUCTIONS"
+Firefox Setup Instructions:
+
+1. Open Firefox and go to the 'Privacy & Security' tab in Settings.
+2. Scroll to the Certificates section and click 'View Certificates'.
+3. Under Authorities, click 'Import', navigate to the DoD certificates directory at "$CERTS_DIR".
+4. Select 'Certificates_PKCS7_v5.6_DoD.der.p7b'.
+5. Check all trust boxes and click OK.
+6. In the same Privacy & Security tab, click 'Security Devices'.
+7. Click 'Load', enter 'CAC Module' for Module Name.
+8. Browse to "/usr/lib64/",click on "opensc-pkcs11.so", and click OK.
+9. Close/Reopen Firefox and go to a DoD CAC-enabled website.
+
+Note: 
+You may need to reboot your computer.
+
+If Firefox can't read your certificate, close Firefox, run 'sudo systemctl restart pcscd.socket', and then restart Firefox.
+EOF
+
+echo "Firefox setup instructions saved to $FIREFOX_INSTRUCTIONS."
 # Call cleanup
 cleanup
 
