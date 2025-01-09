@@ -37,7 +37,7 @@ The script will guide you through each step, including optional installation of 
 
 1. **Update System**: Ensures your system is updated with the latest package versions.
 2. **Install Dependencies**: Installs `pcsc-tools`, `opensc`, `ccid`, and optionally Chromium and Firefox.
-3. **Removes Conflicting Packages**: Removes `cackey` and `coolkey`. These are les stable than `opensc` and could interfere, if installed.
+3. **Removes Conflicting Packages**: Removes `cackey` and `coolkey`. These are less stable than `opensc` and could interfere, if installed.
 4. **Enable and Start `pcscd` Service**: Starts the smart card service for CAC detection.
 5. **Configure OpenSC**: Updates `/etc/opensc.conf` with necessary settings for CAC cards.
 6. **Test Smart Card Reader**: Optionally verifies the reader functionality with `pcsc_scan` (10-second timeout).
@@ -52,7 +52,7 @@ The script will guide you through each step, including optional installation of 
   Restart the service if necessary: (I recommend making an alias!)
   `sudo systemctl restart pcscd.socket`
   
-- **Browser Setup Issues: **If Firefoc or Chromium doesn't recongnize the CAC:
+- **Browser Setup Issues: **If Firefox or Chromium doesn't recongnize the CAC:
   
   - Ensure the `opensc-pkcs11.so` module is correctly loaded in the browser.
     
@@ -68,7 +68,7 @@ The script will guide you through each step, including optional installation of 
   
 - Adjust paths for `onepin-opensc-pkcs11.so` if using dual-use CACs.
   
-- Follow the browser instructionws saved in ~/Downloads adfter running the script.
+- Follow the browser instructionws saved in ~/Downloads after running the script.
   
 
 ## Disclaimer
