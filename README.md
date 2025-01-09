@@ -1,8 +1,8 @@
-# CAC/PIV Setup Script for Arch Linux
+# CAC Setup Script for Arch Linux
 
 ## Overview
 
-This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
+This script automates the setup of a CAC (Common Access Card) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
 
 ## Features
 
