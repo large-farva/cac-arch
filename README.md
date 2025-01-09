@@ -1,13 +1,14 @@
-# CAC Setup Script for Arch Linux
+# CAC/PIV Setup Script for Arch Linux
 
 ## Overview
 
-This script automates the setup of a CAC (Common Access Card) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
+This script automates the setup of a CAC/PIV (Common Access Card / Personal Identity Verification) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
 
 ## Features
 
 - Updates the system and installs required dependencies for CAC operation.
 - Installs required dependencies for CAC operation.
+- Removes potentially conflicting packages.
 - Configures the `pcscd` service to interact with the smart card reader.
 - Configures OpenSC for CAC compatibility.
 - Downloads and installs the latest DoD certificates with retry logic for network stability.
@@ -36,12 +37,13 @@ The script will guide you through each step, including optional installation of 
 
 1. **Update System**: Ensures your system is updated with the latest package versions.
 2. **Install Dependencies**: Installs `pcsc-tools`, `opensc`, `ccid`, and optionally Chromium and Firefox.
-3. **Enable and Start `pcscd` Service**: Starts the smart card service for CAC detection.
-4. **Configure OpenSC**: Updates `/etc/opensc.conf` with necessary settings for CAC cards.
-5. **Test Smart Card Reader**: Optionally verifies the reader functionality with `pcsc_scan` (10-second timeout).
-6. **Download DoD Certificates**: Downloads the latest certificates, with retry logic for failed downloads.
-7. **Import DoD Certificates into Browsers**: Saves instructions for Firefox and Chromium in `~/Downloads` for manual setup.
-8. **Cleanup**: Removes temporary certificate archives after installation.
+3. **Removes Conflicting Packages**: Removes `cackey` and `coolkey`. These are les stable than `opensc` and could interfere, if installed.
+4. **Enable and Start `pcscd` Service**: Starts the smart card service for CAC detection.
+5. **Configure OpenSC**: Updates `/etc/opensc.conf` with necessary settings for CAC cards.
+6. **Test Smart Card Reader**: Optionally verifies the reader functionality with `pcsc_scan` (10-second timeout).
+7. **Download DoD Certificates**: Downloads the latest certificates, with retry logic for failed downloads.
+8. **Import DoD Certificates into Browsers**: Saves instructions for Firefox and Chromium in `~/Downloads` for manual setup.
+9. **Cleanup**: Removes temporary certificate archives after installation.
 
 ## Troubleshooting
 
