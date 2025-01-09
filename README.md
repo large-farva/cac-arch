@@ -1,4 +1,4 @@
-# CAC/PIV Setup Script for Arch Linux
+# CAC Setup Script for Arch Linux
 
 ## Overview
 
