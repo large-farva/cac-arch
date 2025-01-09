@@ -4,7 +4,7 @@
 
 ```bash
 yay -Syu
-yay -S nss pcsclite libpcsc-perl pcsc-tools ccid libccid opensc opensc-pkcs11
+yay -S ccid opensc pcsc-tools
 ```
 
 Make sure `cackey` and `coolkey` are uninstalled:
