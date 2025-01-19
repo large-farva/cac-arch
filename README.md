@@ -23,7 +23,7 @@ This script automates the setup of a CAC (Common Access Card) card on Arch Linux
 
 - Arch Linux distribution (e.g., Arch Linux, EndeavourOS).
 - Root or sudo access for package installation and system configuration.
-- A USB smart card reader.
+- An integrated or USB smart card reader.
 - Stable internet connection.
 
 ## Usage
