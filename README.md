@@ -62,8 +62,9 @@ The script will guide you through each step, including optional installation of 
   - Ensure the `opensc-pkcs11.so` module is correctly loaded in the browser.
     
   - Restart `pcscd` service:
-    `sudo systemctl restart pcscd.socket`
-     I recomment making an alias for this! If you get errors in your browser, exit the browser, run this, and try again.
+    `sudo systemctl restart pcscd.socket`  
+     I recomment making an alias for this!
+    If you get errors in your browser, exit the browser, run this, and try again.
   - Restart the browser and try again.
 
 ## Disclaimer
