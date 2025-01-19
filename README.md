@@ -1,5 +1,9 @@
 # CAC Setup Script for Arch Linux
 
+```cac-arch-v2.sh``` is just a prettier version of the original script with better user interface.
+Charm CLI's ```gum``` is required to run v2.
+```sudo pacman -S gum```
+
 ## Overview
 
 This script automates the setup of a CAC (Common Access Card) card on Arch Linux. It ensures that all necessary dependencies are installed, configures the environment, and sets up browser integration for CAC functionality. The script supports both Firefox and Chromium-based browsers.
@@ -83,6 +87,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) fi
 
 Feel free to open issues or submit pull requests for improvements. Feedback is always welcome!
 
-##Author
+## Author
 
 - Sebastian (Github: large-farva)
