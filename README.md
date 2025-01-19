@@ -11,12 +11,12 @@ This script automates the setup of a CAC (Common Access Card) card on Arch Linux
 
 ## Features
 
-- Updates the system and installs required dependencies for CAC operation.
+- Updates the system.
 - Installs required dependencies for CAC operation.
 - Removes potentially conflicting packages.
 - Configures the `pcscd` service to interact with the smart card reader.
 - Configures OpenSC for CAC compatibility.
-- Downloads and installs the latest DoD certificates with retry logic for network stability.
+- Downloads and installs the latest DoD certificates.
 - Guides you through setting up Firefox and Chromium for CAC functionality.
 
 ## Prerequisites
@@ -36,7 +36,7 @@ This script automates the setup of a CAC (Common Access Card) card on Arch Linux
 3. Run Script
   `sudo ./cac-arch.sh`
 
-The script will guide you through each step, including optional installation of Chromium and Firefox, configuration of services, and downloading and importing DoD certificates.
+The script will guide you through each step, including optional installation of Chromium and Firefox, configuration of services, and downloading/importing DoD certificates.
 
 ## Script Steps
 
@@ -46,7 +46,7 @@ The script will guide you through each step, including optional installation of 
 4. **Enable and Start `pcscd` Service**: Starts the smart card service for CAC detection.
 5. **Configure OpenSC**: Updates `/etc/opensc.conf` with necessary settings for CAC cards.
 6. **Test Smart Card Reader**: Optionally verifies the reader functionality with `pcsc_scan` (10-second timeout).
-7. **Download DoD Certificates**: Downloads the latest certificates, with retry logic for failed downloads.
+7. **Download DoD Certificates**: Downloads the latest certificates.
 8. **Import DoD Certificates into Browsers**: Saves instructions for Firefox and Chromium in `~/Downloads` for manual setup.
 9. **Cleanup**: Removes temporary certificate archives after installation.
 
@@ -54,7 +54,7 @@ The script will guide you through each step, including optional installation of 
 
 - **`pcscd` Daemon Issues**: If the script fails to detect the smart card reader, ensure the `pcscd`service is running:
   `sudo systemctl status pcscd.socket`
-  Restart the service if necessary: (I recommend making an alias!)
+  Restart the service if necessary:
   `sudo systemctl restart pcscd.socket`
   
 - **Browser Setup Issues: **If Firefox or Chromium doesn't recongnize the CAC:
@@ -63,18 +63,8 @@ The script will guide you through each step, including optional installation of 
     
   - Restart `pcscd` service:
     `sudo systemctl restart pcscd.socket`
-    
+     I recomment making an alias for this! If you get errors in your browser, exit the browser, run this, and try again.
   - Restart the browser and try again.
-    
-
-## Notes
-
-- This script is optimized for CAC, but may work with PIV cards as well.
-  
-- Adjust paths for `onepin-opensc-pkcs11.so` if using dual-use CACs.
-  
-- Follow the browser instructionws saved in ~/Downloads after running the script.
-  
 
 ## Disclaimer
 
