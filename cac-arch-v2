@@ -1,0 +1,172 @@
+#!/bin/bash
+
+# Paths and URLs
+CERTS_URL="https://dl.dod.cyber.mil/wp-content/uploads/pki-pke/zip/unclass-certificates_pkcs7_v5-6_dod.zip"
+CERTS_DIR="$HOME/.certs"
+CHROMIUM_INSTRUCTIONS="$HOME/Downloads/chromium-instructions.txt"
+FIREFOX_INSTRUCTIONS="$HOME/Downloads/firefox-instructions.txt"
+
+# Script version
+SCRIPT_VERSION="2"
+
+# Trap cleanup
+trap_cleanup() {
+    gum style --foreground=212 "Cleaning up temporary files..."
+    rm -f "$CERTS_DIR"/*.zip
+    gum style --foreground=212 "Cleanup completed."
+}
+trap trap_cleanup EXIT
+
+main() {
+    gum style --border rounded --align center --padding "1 2" --foreground 33 --bold <<EOF
+Running DoD CAC Setup Script - Version $SCRIPT_VERSION
+(Arch Linux only)
+EOF
+    update_system
+    install_packages
+    remove_conflicting_packages
+    browser_installation
+    configure_opensc
+    manage_pcscd_service
+    smart_card_reader_test
+    download_certificates
+    save_instructions
+    prompt_reboot
+    gum style --border rounded --align center --padding "1 2" --foreground 33 --bold <<EOF
+DoD CAC setup script completed.
+Please proceed with the browser setup.
+EOF
+}
+
+update_system() {
+    gum style --bold --foreground=15 "Updating the system..."
+    gum spin --spinner dot --title "Running system update" -- sudo pacman -Syu --noconfirm
+    gum style --foreground=42 "System update completed."
+    echo ""
+}
+
+install_packages() {
+    gum style --bold --foreground=15 "Installing required packages..."
+    gum spin --spinner dot --title "Installing packages" -- sudo pacman -Syu --noconfirm ccid opensc pcsc-tools
+    gum style --foreground=42 "Required packages installed."
+    echo ""
+}
+
+remove_conflicting_packages() {
+    gum style --bold --foreground=15 "Uninstalling conflicting packages..."
+    for pkg in cackey coolkey; do
+        if pacman -Q "$pkg" &>/dev/null; then
+            gum style --foreground=212 "Removing $pkg..."
+            sudo pacman -R --noconfirm "$pkg"
+            gum style --foreground=42 "$pkg removed."
+        else
+            gum style --foreground=212 "$pkg not installed. Skipping."
+        fi
+    done
+    gum style --foreground=42 "Conflicting package removal completed."
+    echo ""
+}
+
+browser_installation() {
+    gum style --bold --foreground=15 "Browser installation"
+    browser=$(gum choose "Chromium (Recommended)" "Firefox" "Skip Browser Installation")
+    if [[ "$browser" == "Skip Browser Installation" ]]; then
+        gum style --foreground=220 "Skipping browser installation."
+    else
+        if gum confirm "Do you want to install $browser?"; then
+            gum spin --spinner dot --title "Installing $browser..." -- sudo pacman -S --noconfirm "${browser,,}"
+            gum style --foreground=42 "$browser installed."
+        else
+            gum style --foreground=220 "Skipping installation of $browser."
+        fi
+    fi
+    echo ""
+}
+
+configure_opensc() {
+    gum style --bold --foreground=15 "Configuring OpenSC..."
+    if ! grep -q "enable_pinpad=false" /etc/opensc.conf; then
+        echo "enable_pinpad=false" | sudo tee -a /etc/opensc.conf > /dev/null
+        gum style --foreground=42 "OpenSC configured successfully."
+    else
+        gum style --foreground=212 "OpenSC already configured."
+    fi
+    echo ""
+}
+
+manage_pcscd_service() {
+    gum style --bold --foreground=15 "Managing pcscd service..."
+    sudo systemctl enable --now pcscd.socket
+    gum style --foreground=42 "pcscd service enabled and restarted."
+    echo ""
+}
+
+smart_card_reader_test() {
+    if gum confirm "Do you want to test your smart card reader now?"; then
+        gum style --bold --foreground=15 "Testing smart card reader for 10 seconds..."
+        if ! gum spin --spinner dot --title "Testing card reader..." -- timeout 10 pcsc_scan; then
+            gum style --foreground=160 "Smart card reader test failed."
+        fi
+    else
+        gum style --foreground=212 "Skipping smart card reader test."
+    fi
+    echo ""
+}
+
+download_certificates() {
+    gum style --bold --foreground=15 "Downloading DoD CAC certificates..."
+    mkdir -p "$CERTS_DIR"
+    gum spin --spinner dot --title "Downloading certificates" -- wget -q -O "$CERTS_DIR/certs.zip" "$CERTS_URL"
+    gum spin --spinner dot --title "Extracting certificates" -- unzip -o "$CERTS_DIR/certs.zip" -d "$CERTS_DIR"
+    gum style --foreground=42 "Certificates downloaded and extracted."
+    echo ""
+}
+
+save_instructions() {
+    gum style --bold --foreground=15 "Saving browser setup instructions..."
+    cat <<EOF > "$CHROMIUM_INSTRUCTIONS"
+Chromium Setup Instructions:
+
+1. Open Chromium and go to the 'Privacy and Security' tab in Settings.
+2. Then click 'Manage certificates'.
+3. Under 'Authorities', click 'Import'.
+4. Navigate to the DoD certificates directory at "$CERTS_DIR".
+5. Select 'Certificates_PKCS7_v5-6_DoD.der.p7b'.
+6. Check all trust boxes and click OK.
+7. Open a terminal and execute this 'modutil -dbdir sql:.pki/nssdb/ -add "CAC Module" -libfile /usr/lib64/opensc-pkcs11.so'. This loads your Security Device Module 
+8. Execute 'modutil -dbdir sql:.pki/nssdb/ -list' and make sure 'CAC Module' is visible.
+9. Close/Reopen Chromium and go to a DoD CAC-enabled website.
+EOF
+
+    cat <<EOF > "$FIREFOX_INSTRUCTIONS"
+Firefox Setup Instructions:
+
+1. Open Firefox and go to the 'Privacy & Security' tab in Settings.
+2. Scroll to the Certificates section and click 'View Certificates'.
+3. Under Authorities, click 'Import', navigate to the DoD certificates directory at "$CERTS_DIR".
+4. Select 'Certificates_PKCS7_v5.6_DoD.der.p7b'.
+5. Check all trust boxes and click OK.
+6. In the same Privacy & Security tab, click 'Security Devices'.
+7. Click 'Load', enter 'CAC Module' for Module Name.
+8. Browse to "/usr/lib64/",click on "opensc-pkcs11.so", and click OK.
+9. Close/Reopen Firefox and go to a DoD CAC-enabled website.
+EOF
+
+    gum style --bold --foreground=42 --padding "0 2" --border rounded \
+        "Instructions saved to the following locations:
+  - Chromium: ~/Downloads/chromium-instructions.txt
+  - Firefox: ~/Downloads/firefox-instructions.txt"
+    echo ""
+}
+
+prompt_reboot() {
+    if gum confirm "Do you want to reboot now?"; then
+        gum style --foreground=212 "Rebooting the system..."
+        sudo reboot
+    else
+        gum style --foreground=220 "Reboot skipped. Please remember to reboot later to complete the setup."
+    fi
+    echo ""
+}
+
+main "$@"
