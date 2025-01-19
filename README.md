@@ -1,7 +1,7 @@
 # CAC Setup Script for Arch Linux
 
-```cac-arch-v2.sh``` is just a prettier version of the original script with better user interface.  
 Charm CLI's ```gum``` is required to run v2.  
+```cac-arch-v2.sh``` is just a prettier version of the original script with better user interface.  
 ```sudo pacman -S gum```
 
 ## Overview
